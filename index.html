@@ -7,7 +7,11 @@
 		<script src="http://cdnjs.cloudflare.com/ajax/libs/keymaster/1.6.1/keymaster.min.js" charset="utf-8"></script>
 		<script src="ShootingGame.js" charset="utf-8"></script>
 		<script charset="utf-8">
-			var shooting = new Shooting();
+			var shooting;
+
+			document.addEventListener('DOMContentLoaded', function () {
+				shooting = new Shooting();
+			});
 		</script>
 	</head>
 	<body>

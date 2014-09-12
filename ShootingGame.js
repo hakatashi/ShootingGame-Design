@@ -1,12 +1,16 @@
-(function () {
-	var Shooting = function () {
-		this.width = 400;
-		this.height = 600;
+var Shooting = function () {
+	var shooting = this;
 
-		this.queue = new createjs.LoadQueue();
+	shooting.initialize = function () {
+		shooting.stage = new createjs.Stage('canvas');
 
-		this.queue.on('complete', this.onComplete, this);
-		this.queue.loadManifest([
+		shooting.width = 400;
+		shooting.height = 600;
+
+		shooting.queue = new createjs.LoadQueue();
+
+		shooting.queue.on('complete', shooting.onComplete);
+		shooting.queue.loadManifest([
 			'background',
 			'bullet1',
 			'bullet2',
@@ -23,28 +27,25 @@
 		key('up, down, right, left', function () {return false});
 	};
 
-	Shooting.prototype.onComplete = function () {
-		this.stage = new createjs.Stage('canvas');
-		createjs.Ticker.on('tick', this.ticker, this);
-
-		this.background = new Background(this);
-		this.stage.addChild(this.background);
-		this.player = new Player(this);
-		this.stage.addChild(this.player);
+	shooting.onComplete = function () {
+		createjs.Ticker.on('tick', shooting.ticker);
+		shooting.background = new Background();
+		shooting.stage.addChild(shooting.background);
+		shooting.player = new Player();
+		shooting.stage.addChild(shooting.player);
 	};
 
-	Shooting.prototype.ticker = function (event) {
-		this.stage.children.forEach(function (child) {
+	shooting.ticker = function (event) {
+		shooting.stage.children.forEach(function (child) {
 			child.ticker(event);
 		});
-		this.stage.update();
+		shooting.stage.update();
 	};
 
 	// Background
 
-	var Background = function (shooting) {
+	var Background = function () {
 		this.initialize();
-		this.shooting = shooting;
 
 		this.addChild(new createjs.Bitmap(shooting.queue.getResult('background')));
 		this.top = 0;
@@ -54,7 +55,6 @@
 
 	Background.prototype.ticker = function (event) {
 		var background = this;
-		var shooting = this.shooting;
 
 		this.top += event.delta / 1000 * 100;
 
@@ -77,9 +77,8 @@
 
 	// Player
 
-	var Player = function (shooting) {
+	var Player = function () {
 		this.initialize();
-		this.shooting = shooting;
 
 		this.image = new createjs.Bitmap(shooting.queue.getResult('player'))
 		this.image.x = - this.image.image.width / 2;
@@ -109,21 +108,19 @@
 		this.y += direction.y * event.delta / 1000 * this.v;
 
 		if (key.isPressed('z')) {
-			this.shooting.stage.addChild(new PlayerBullet(this.shooting, this.x, this.y));
+			shooting.stage.addChild(new PlayerBullet(this.x, this.y - 20));
 		}
 	};
 
 	// PlayerBullet
 
-	var PlayerBullet = function (shooting, x, y) {
+	var PlayerBullet = function (x, y) {
 		this.initialize();
 
 		this.image = new createjs.Bitmap(shooting.queue.getResult('playerbullet'))
 		this.image.x = - this.image.image.width / 2;
 		this.image.y = - this.image.image.height / 2;
 		this.addChild(this.image);
-
-		this.shooting = shooting;
 
 		this.x = x;
 		this.y = y;
@@ -134,8 +131,8 @@
 	PlayerBullet.prototype.ticker = function (event) {
 		this.y -= event.delta / 1000 * 1000;
 
-		if (this.y < 0) this.shooting.stage.removeChild(this);
+		if (this.y < 0) shooting.stage.removeChild(this);
 	};
 
-	window.Shooting = Shooting;
-})();
+	shooting.initialize();
+};
