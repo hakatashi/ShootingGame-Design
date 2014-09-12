@@ -44,12 +44,16 @@ var Shooting = function () {
 
 		shooting.enemy = new Enemy();
 		shooting.stage.addChild(shooting.enemy);
+
+		shooting.game = new Game(0);
 	};
 
 	shooting.ticker = function (event) {
 		shooting.stage.children.forEach(function (child) {
 			child.ticker(event);
 		});
+
+		shooting.game.ticker(event);
 
 		shooting.stage.update();
 	};
@@ -174,12 +178,10 @@ var Shooting = function () {
 		this.addChild(this.image);
 
 		this.x = shooting.width / 2;
-		this.y = shooting.height * 0.2;
+		this.y = shooting.height * 0.3;
 
 		this.hp = 1000;
 		this.size = 50;
-
-		this.counter = 0;
 	};
 
 	Enemy.prototype = new createjs.Container();
@@ -193,10 +195,6 @@ var Shooting = function () {
 				enemy.hp -= 1;
 			}
 		});
-
-		shooting.bullets.addChild(new Bullet('bullet1', this.x, this.y, 200, this.counter * this.counter));
-
-		this.counter++;
 	};
 
 	// Bullet
@@ -252,6 +250,156 @@ var Shooting = function () {
 		this.children.forEach(function (child) {
 			child.ticker(event);
 		});
+	};
+
+	Bullets.prototype.clear = function () {
+		this.children.forEach(function (child) {
+			this.removeChild(child);
+		});
+	};
+
+	// Game Controller
+
+	var Game = function (level) {
+		this.level = level;
+		this.phase = 'initialize';
+		this.tick = 0;
+		this.children = [];
+	};
+
+	Game.prototype.changeLevel = function (level) {
+		shooting.bullets.clear();
+		this.level = level;
+		this.phase = 'initialize';
+		this.tick = 0;
+	};
+
+	Game.prototype.ticker = function (event) {
+		switch (this.level) {
+			case 0:
+				if (this.tick % 200 === 0) {
+					var angle = Math.random() * Math.PI;
+					this.addChild(new Level1(false, angle));
+					this.addChild(new Level1(true, angle));
+				}
+				break;
+		}
+
+		this.children.forEach(function (child) {
+			child.ticker(event);
+		});
+
+		this.tick++;
+	};
+
+	Game.prototype.addChild = function (child) {
+		this.children.push(child);
+	};
+
+	Game.prototype.removeChild = function (childToRemove) {
+		var game = this;
+
+		for (var i = 0; i < this.children.length; i++) {
+			if (this.children[i] === childToRemove) {
+				this.children.splice(i, 1);
+				return;
+			}
+		}
+	}
+
+	// Level1
+
+	var Level1 = function (type, angle) {
+		var level1 = this;
+
+		this.tick = 0;
+		this.type = type;
+
+		this.angle = angle;
+
+		this.vertices = [0, 1, 2, 3, 4, 5].map(function (vertex, index) {
+			var angle = Math.PI * 2 / 5 * index * 2 + level1.angle + (level1.type ? 0 : Math.PI);
+			var radial = level1.type ? 120 : 200;
+			return {
+				x: Math.sin(angle) * radial + shooting.enemy.x,
+				y: -Math.cos(angle) * radial + shooting.enemy.y
+			};
+		});
+
+		this.phase = 'writeStar';
+	};
+
+	Level1.prototype.ticker = function (event) {
+		var level1 = this;
+
+		switch (this.phase) {
+			case 'writeStar':
+				for (var i = 0; i < 3; i++) {
+					var index = Math.floor(this.tick / 50);
+					var order = this.tick % 50;
+					if (index >= 5) {
+						this.goto('waitBeforeFlare');
+						break;
+					}
+
+					var from = this.vertices[index];
+					var to = this.vertices[index + 1];
+
+					var bullet = new Bullet(
+						'bullet1',
+						from.x + (to.x - from.x) / 50 * order,
+						from.y + (to.y - from.y) / 50 * order,
+						0, Math.random() * 360
+					);
+					bullet._v = 100 + Math.random() * 100;
+					bullet._flare = 'wait';
+					bullet._parent = this;
+					shooting.bullets.addChild(bullet);
+
+					this.tick++;
+				}
+				this.tick--;
+				break;
+			case 'waitBeforeFlare':
+				if (this.tick >= (this.type ? 100 : 10)) {
+					this.tick = -1;
+					this.phase = 'flare';
+					shooting.bullets.children.forEach(function (bullet) {
+						if (bullet._flare === 'wait' && bullet._parent === level1) {
+							bullet._flare = 'flaring';
+						}
+					});
+				}
+				break;
+			case 'flare':
+				var duration = this.type ? 150 : 200;
+
+				shooting.bullets.children.forEach(function (bullet) {
+					if (bullet._flare === 'flaring' && bullet._parent === level1) {
+						bullet.v = bullet._v * level1.tick / duration;
+						if (level1.tick === duration) bullet._flare = 'flared';
+					}
+				});
+
+				if (level1.tick === duration) {
+					shooting.game.removeChild(this);
+				}
+				break;
+		}
+
+		this.tick++;
+	};
+
+	Level1.prototype.wait = function (ticks, nextPhase) {
+		if (this.tick >= ticks) {
+			this.tick = -1;
+			this.phase = nextPhase;
+		}
+	};
+
+	Level1.prototype.goto = function (phase) {
+		this.tick = -1;
+		this.phase = phase;
 	};
 
 	// utils
