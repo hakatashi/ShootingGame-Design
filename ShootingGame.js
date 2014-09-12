@@ -34,8 +34,9 @@
 	};
 
 	Shooting.prototype.ticker = function (event) {
-		this.background.ticker(event);
-		this.player.ticker(event);
+		this.stage.children.forEach(function (child) {
+			child.ticker(event);
+		});
 		this.stage.update();
 	};
 
@@ -106,6 +107,34 @@
 
 		this.x += direction.x * event.delta / 1000 * this.v;
 		this.y += direction.y * event.delta / 1000 * this.v;
+
+		if (key.isPressed('z')) {
+			this.shooting.stage.addChild(new PlayerBullet(this.shooting, this.x, this.y));
+		}
+	};
+
+	// PlayerBullet
+
+	var PlayerBullet = function (shooting, x, y) {
+		this.initialize();
+
+		this.image = new createjs.Bitmap(shooting.queue.getResult('playerbullet'))
+		this.image.x = - this.image.image.width / 2;
+		this.image.y = - this.image.image.height / 2;
+		this.addChild(this.image);
+
+		this.shooting = shooting;
+
+		this.x = x;
+		this.y = y;
+	};
+
+	PlayerBullet.prototype = new createjs.Container();
+
+	PlayerBullet.prototype.ticker = function (event) {
+		this.y -= event.delta / 1000 * 1000;
+
+		if (this.y < 0) this.shooting.stage.removeChild(this);
 	};
 
 	window.Shooting = Shooting;
