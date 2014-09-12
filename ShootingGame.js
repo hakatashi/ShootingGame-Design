@@ -39,6 +39,9 @@ var Shooting = function () {
 		shooting.playerBullets = new PlayerBullets();
 		shooting.stage.addChild(shooting.playerBullets);
 
+		shooting.bullets = new Bullets();
+		shooting.stage.addChild(shooting.bullets);
+
 		shooting.enemy = new Enemy();
 		shooting.stage.addChild(shooting.enemy);
 	};
@@ -175,6 +178,8 @@ var Shooting = function () {
 
 		this.hp = 1000;
 		this.size = 50;
+
+		this.counter = 0;
 	};
 
 	Enemy.prototype = new createjs.Container();
@@ -187,6 +192,65 @@ var Shooting = function () {
 				shooting.playerBullets.removeChild(playerBullet);
 				enemy.hp -= 1;
 			}
+		});
+
+		shooting.bullets.addChild(new Bullet('bullet1', this.x, this.y, 200, this.counter * this.counter));
+
+		this.counter++;
+	};
+
+	// Bullet
+
+	var Bullet = function (image, x, y, v, angle) {
+		this.initialize();
+
+		this.image = new createjs.Bitmap(shooting.queue.getResult(image))
+		this.image.x = - this.image.image.width / 2;
+		this.image.y = - this.image.image.height / 2;
+		this.addChild(this.image);
+
+		this.x = x;
+		this.y = y;
+
+		this.v = v;
+		this.rotation = angle;
+		this.angle = angle
+	};
+
+	Bullet.prototype = new createjs.Container();
+
+	Bullet.prototype.ticker = function (event) {
+		var margin = 10;
+
+		this.x += Math.sin(this.angle / 180 * Math.PI) * this.v * event.delta / 1000;
+		this.y -= Math.cos(this.angle / 180 * Math.PI) * this.v * event.delta / 1000;
+
+		if (
+			this.x < -margin
+			|| shooting.width + margin < this.x
+			|| this.y < -margin
+			|| shooting.height + margin < this.y
+		) {
+			shooting.bullets.removeChild(this);
+			return;
+		}
+
+		this.rotation = this.angle;
+	};
+
+	// Bullets
+
+	var Bullets = function () {
+		this.initialize();
+
+		this.compositeOperation = 'lighter';
+	};
+
+	Bullets.prototype = new createjs.Container();
+
+	Bullets.prototype.ticker = function (event) {
+		this.children.forEach(function (child) {
+			child.ticker(event);
 		});
 	};
 
