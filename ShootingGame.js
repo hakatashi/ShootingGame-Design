@@ -27,7 +27,9 @@ Shooting.prototype.onComplete = function () {
 	createjs.Ticker.on('tick', this.ticker, this);
 
 	this.background = new Shooting.Background(this);
+	this.stage.addChild(this.background);
 	this.player = new Shooting.Player(this);
+	this.stage.addChild(this.player);
 };
 
 Shooting.prototype.ticker = function (event) {
@@ -37,51 +39,54 @@ Shooting.prototype.ticker = function (event) {
 };
 
 Shooting.Background = function (shooting) {
+	this.initialize();
 	this.shooting = shooting;
 
-	this.images = new createjs.Container();
-	this.shooting.stage.addChild(this.images);
-
-	this.images.addChild(new createjs.Bitmap(shooting.queue.getResult('background')));
-
-	this.y = 0;
+	this.addChild(new createjs.Bitmap(shooting.queue.getResult('background')));
+	this.top = 0;
 };
+
+Shooting.Background.prototype = new createjs.Container();
 
 Shooting.Background.prototype.ticker = function (event) {
 	var background = this;
 	var shooting = this.shooting;
 
-	this.y += event.delta / 1000 * 100;
+	this.top += event.delta / 1000 * 100;
 
-	if (this.y > 0) {
+	if (this.top > 0) {
 		var newImage = new createjs.Bitmap(shooting.queue.getResult('background'));
-
-		this.images.addChild(newImage);
-		this.y -= newImage.image.height;
+		this.addChild(newImage);
+		this.top -= newImage.image.height;
 	};
 
-	this.images.children.reduce(function (y, image) {
+	this.children.reduce(function (y, image) {
 		if (y <= shooting.height) {
 			image.y = y;
 		} else {
-			background.images.removeChild(image);
+			background.removeChild(image);
 		}
 
 		return y + image.image.height;
-	}, this.y);
+	}, this.top);
 };
 
 Shooting.Player = function (shooting) {
+	this.initialize();
 	this.shooting = shooting;
 
-	this.image = new createjs.Bitmap(shooting.queue.getResult('player'));
-	shooting.stage.addChild(this.image);
+	this.image = new createjs.Bitmap(shooting.queue.getResult('player'))
+	this.image.x = - this.image.image.width / 2;
+	this.image.y = - this.image.image.height / 2;
+	this.addChild(this.image);
 
 	this.x = shooting.width / 2;
 	this.y = shooting.height * 0.75;
 
 	this.v = 300;
 };
+
+Shooting.Player.prototype = new createjs.Container();
 
 Shooting.Player.prototype.ticker = function (event) {
 	if (key.shift) this.v = 100;
@@ -96,7 +101,4 @@ Shooting.Player.prototype.ticker = function (event) {
 
 	this.x += direction.x * event.delta / 1000 * this.v;
 	this.y += direction.y * event.delta / 1000 * this.v;
-
-	this.image.x = this.x - this.image.image.width / 2;
-	this.image.y = this.y - this.image.image.height / 2;
 };
