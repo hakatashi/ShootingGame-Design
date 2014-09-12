@@ -29,16 +29,25 @@ var Shooting = function () {
 
 	shooting.onComplete = function () {
 		createjs.Ticker.on('tick', shooting.ticker);
+
 		shooting.background = new Background();
 		shooting.stage.addChild(shooting.background);
+
 		shooting.player = new Player();
 		shooting.stage.addChild(shooting.player);
+
+		shooting.playerBullets = new PlayerBullets();
+		shooting.stage.addChild(shooting.playerBullets);
+
+		shooting.enemy = new Enemy();
+		shooting.stage.addChild(shooting.enemy);
 	};
 
 	shooting.ticker = function (event) {
 		shooting.stage.children.forEach(function (child) {
 			child.ticker(event);
 		});
+
 		shooting.stage.update();
 	};
 
@@ -107,8 +116,11 @@ var Shooting = function () {
 		this.x += direction.x * event.delta / 1000 * this.v;
 		this.y += direction.y * event.delta / 1000 * this.v;
 
+		this.x = Math.min(shooting.width, Math.max(0, this.x));
+		this.y = Math.min(shooting.height, Math.max(0, this.y));
+
 		if (key.isPressed('z')) {
-			shooting.stage.addChild(new PlayerBullet(this.x, this.y - 20));
+			shooting.playerBullets.addChild(new PlayerBullet(this.x, this.y - 20));
 		}
 	};
 
@@ -132,6 +144,56 @@ var Shooting = function () {
 		this.y -= event.delta / 1000 * 1000;
 
 		if (this.y < 0) shooting.stage.removeChild(this);
+	};
+
+	// PlayerBullets
+
+	var PlayerBullets = function () {
+		this.initialize();
+	};
+
+	PlayerBullets.prototype = new createjs.Container();
+
+	PlayerBullets.prototype.ticker = function (event) {
+		this.children.forEach(function (child) {
+			child.ticker(event);
+		});
+	};
+
+	// Enemy
+
+	var Enemy = function () {
+		this.initialize();
+
+		this.image = new createjs.Bitmap(shooting.queue.getResult('enemy'))
+		this.image.x = - this.image.image.width / 2;
+		this.image.y = - this.image.image.height / 2;
+		this.addChild(this.image);
+
+		this.x = shooting.width / 2;
+		this.y = shooting.height * 0.2;
+
+		this.hp = 1000;
+		this.size = 50;
+	};
+
+	Enemy.prototype = new createjs.Container();
+
+	Enemy.prototype.ticker = function (event) {
+		var enemy = this;
+
+		shooting.playerBullets.children.forEach(function (playerBullet) {
+			if (distance(playerBullet, enemy) < enemy.size) {
+				shooting.playerBullets.removeChild(playerBullet);
+				enemy.hp -= 1;
+			}
+		});
+	};
+
+	// utils
+
+	var distance = function (a, b) {
+		return Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
 	};
 
 	shooting.initialize();
