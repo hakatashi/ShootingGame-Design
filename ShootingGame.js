@@ -335,26 +335,28 @@ var Shooting = function () {
 		switch (this.phase) {
 			case 'writeStar':
 				for (var i = 0; i < 3; i++) {
-					var index = Math.floor(this.tick / 50);
-					var order = this.tick % 50;
-					if (index >= 5) {
-						this.goto('waitBeforeFlare');
-						break;
+					if (location.href.substr(-9) !== '?moderate' || i === 0) {
+						var index = Math.floor(this.tick / 50);
+						var order = this.tick % 50;
+						if (index >= 5) {
+							this.goto('waitBeforeFlare');
+							break;
+						}
+
+						var from = this.vertices[index];
+						var to = this.vertices[index + 1];
+
+						var bullet = new Bullet(
+							'bullet1',
+							from.x + (to.x - from.x) / 50 * order,
+							from.y + (to.y - from.y) / 50 * order,
+							0, Math.random() * 360
+						);
+						bullet._v = 100 + Math.random() * 100;
+						bullet._flare = 'wait';
+						bullet._parent = this;
+						shooting.bullets.addChild(bullet);
 					}
-
-					var from = this.vertices[index];
-					var to = this.vertices[index + 1];
-
-					var bullet = new Bullet(
-						'bullet1',
-						from.x + (to.x - from.x) / 50 * order,
-						from.y + (to.y - from.y) / 50 * order,
-						0, Math.random() * 360
-					);
-					bullet._v = 100 + Math.random() * 100;
-					bullet._flare = 'wait';
-					bullet._parent = this;
-					shooting.bullets.addChild(bullet);
 
 					this.tick++;
 				}
