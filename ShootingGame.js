@@ -45,7 +45,7 @@ var Shooting = function () {
 		shooting.enemy = new Enemy();
 		shooting.stage.addChild(shooting.enemy);
 
-		shooting.game = new Game(0);
+		shooting.game = new Game(1);
 	};
 
 	shooting.ticker = function (event) {
@@ -210,6 +210,8 @@ var Shooting = function () {
 		this.x = x;
 		this.y = y;
 
+		this.tick = 0;
+
 		this.v = v;
 		this.rotation = angle;
 		this.angle = angle
@@ -232,6 +234,8 @@ var Shooting = function () {
 			shooting.bullets.removeChild(this);
 			return;
 		}
+
+		this.tick++;
 
 		this.rotation = this.angle;
 	};
@@ -274,6 +278,11 @@ var Shooting = function () {
 					var angle = Math.random() * Math.PI;
 					this.addChild(new Level1(false, angle));
 					this.addChild(new Level1(true, angle));
+				}
+				break;
+			case 1:
+				if (this.tick === 0) {
+					this.addChild(new Level2());
 				}
 				break;
 		}
@@ -395,6 +404,36 @@ var Shooting = function () {
 	Level1.prototype.goto = function (phase) {
 		this.tick = -1;
 		this.phase = phase;
+	};
+
+	// Level2
+
+	var Level2 = function () {
+		var Level2 = this;
+
+		this.tick = 0;
+		this.cnt = 0;
+	};
+
+	Level2.prototype.ticker = function (event) {
+		var Level2 = this;
+
+		for (var i = 0; i < 3; i++) {
+			var bullet = new Bullet('bullet2', shooting.enemy.x, shooting.enemy.y, 1000, this.cnt * 11);
+			bullet._baseAngle = bullet.angle;
+			bullet._wind = Math.sin(this.cnt / 300) * (this.cnt % 2 ? 1 : -1) * 50;
+			shooting.bullets.addChild(bullet);
+			this.cnt++;
+		}
+
+		shooting.bullets.children.forEach(function (bullet) {
+			if (bullet.tick > 3) {
+				bullet.v = Math.max(100, bullet.v - 50);
+				bullet.angle = bullet._baseAngle + (1000 - bullet.v) / 900 * bullet._wind;
+			}
+		});
+
+		this.tick++;
 	};
 
 	// utils
