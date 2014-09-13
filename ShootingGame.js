@@ -45,7 +45,10 @@ var Shooting = function () {
 		shooting.enemy = new Enemy();
 		shooting.stage.addChild(shooting.enemy);
 
-		shooting.game = new Game(1);
+		shooting.game = new Game(0);
+		key('x', function () {
+			shooting.game.switchLevel(shooting.game.level ? 0 : 1);
+		});
 	};
 
 	shooting.ticker = function (event) {
@@ -266,7 +269,6 @@ var Shooting = function () {
 
 	var Game = function (level) {
 		this.level = level;
-		this.phase = 'initialize';
 		this.tick = 0;
 		this.children = [];
 	};
@@ -307,7 +309,15 @@ var Shooting = function () {
 				return;
 			}
 		}
-	}
+	};
+
+	Game.prototype.switchLevel = function (level) {
+		this.tick = 0;
+		this.level = level;
+		this.children.forEach(function (child) {
+			child.abort();
+		});
+	};
 
 	// Level1
 
@@ -380,7 +390,7 @@ var Shooting = function () {
 
 				shooting.bullets.children.forEach(function (bullet) {
 					if (bullet._flare === 'flaring' && bullet._parent === level1) {
-						bullet.v = bullet._v * level1.tick / duration;
+						bullet.v += bullet._v / duration;
 						if (level1.tick === duration) bullet._flare = 'flared';
 					}
 				});
@@ -406,6 +416,19 @@ var Shooting = function () {
 		this.phase = phase;
 	};
 
+	Level1.prototype.abort = function () {
+		var level1 = this;
+
+		shooting.bullets.children.forEach(function (bullet) {
+			if (bullet._parent === level1) {
+				bullet._flare = 'flaring';
+			}
+		});
+
+		this.phase = 'flare';
+		this.tick = 0;
+	};
+
 	// Level2
 
 	var Level2 = function () {
@@ -413,27 +436,40 @@ var Shooting = function () {
 
 		this.tick = 0;
 		this.cnt = 0;
+
+		this.aborted = false;
 	};
 
 	Level2.prototype.ticker = function (event) {
-		var Level2 = this;
+		var level2 = this;
 
-		for (var i = 0; i < 3; i++) {
-			var bullet = new Bullet('bullet2', shooting.enemy.x, shooting.enemy.y, 1000, this.cnt * 11);
-			bullet._baseAngle = bullet.angle;
-			bullet._wind = Math.sin(this.cnt / 300) * (this.cnt % 2 ? 1 : -1) * 50;
-			shooting.bullets.addChild(bullet);
-			this.cnt++;
+		if (!this.aborted) {
+			for (var i = 0; i < 3; i++) {
+				var bullet = new Bullet('bullet2', shooting.enemy.x, shooting.enemy.y, 1000, this.cnt * 11);
+				bullet._baseAngle = bullet.angle;
+				bullet._wind = Math.sin(this.cnt / 300) * (this.cnt % 2 ? 1 : -1) * 50;
+				bullet._parent = this;
+				shooting.bullets.addChild(bullet);
+				this.cnt++;
+			}
 		}
 
 		shooting.bullets.children.forEach(function (bullet) {
-			if (bullet.tick > 3) {
+			if (bullet.tick > 3 && bullet._parent === level2) {
 				bullet.v = Math.max(100, bullet.v - 50);
 				bullet.angle = bullet._baseAngle + (1000 - bullet.v) / 900 * bullet._wind;
 			}
 		});
 
 		this.tick++;
+	};
+
+	Level2.prototype.abort = function () {
+		var level2 = this;
+		this.aborted = true;
+		setTimeout(function () {
+			shooting.game.removeChild(level2);
+		}, 1000);
 	};
 
 	// utils
