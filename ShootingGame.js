@@ -7,7 +7,7 @@ var Shooting = function () {
 		shooting.width = 400;
 		shooting.height = 600;
 
-		shooting.queue = new createjs.LoadQueue();
+		shooting.queue = new createjs.LoadQueue(false);
 
 		shooting.queue.on('complete', shooting.onComplete);
 		shooting.queue.loadManifest([
@@ -24,7 +24,7 @@ var Shooting = function () {
 		createjs.Ticker.setFPS(60);
 
 		// prevent defaults
-		key('up, down, right, left', function () {return false});
+		key('up, down, right, left, shift, z', function () {return false});
 	};
 
 	shooting.onComplete = function () {
