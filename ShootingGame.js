@@ -267,13 +267,6 @@ var Shooting = function () {
 		this.children = [];
 	};
 
-	Game.prototype.changeLevel = function (level) {
-		shooting.bullets.clear();
-		this.level = level;
-		this.phase = 'initialize';
-		this.tick = 0;
-	};
-
 	Game.prototype.ticker = function (event) {
 		switch (this.level) {
 			case 0:
